@@ -19,18 +19,17 @@
 
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
-/* 상단 3단 지역/분류 선택 바 (모바일 반응형 적용) */
+        /* 상단 3단 지역/분류 선택 바 (모바일 반응형 적용) */
         .region-selector {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 680px;
             background: var(--bg-white); border-radius: 16px; box-shadow: var(--shadow);
-            display: flex; flex-wrap: wrap; /* 💡 핵심: 화면이 좁으면 알아서 줄바꿈 */
+            display: flex; flex-wrap: wrap; /* 화면이 좁으면 줄바꿈 */
             align-items: center; padding: 12px; z-index: 10; gap: 8px;
         }
 
         .region-selector select {
-            flex: 1 1 40%; /* 모바일에서는 반반씩 공간을 차지함 */
-            min-width: 110px;
+            flex: 1 1 40%; min-width: 110px;
             border: none; outline: none; font-size: 14px; padding: 8px;
             background: transparent; color: var(--text-main); font-weight: 500; cursor: pointer;
             appearance: none;
@@ -38,10 +37,10 @@
             background-repeat: no-repeat; background-position: right 4px center; background-size: 16px; padding-right: 20px;
         }
 
-        .divider { display: none; } /* 좁은 모바일에서는 구분선을 숨김 */
+        .divider { display: none; }
 
         .btn-search {
-            flex: 1 1 100%; /* 모바일에서 터치하기 편하게 가로를 꽉 채움 */
+            flex: 1 1 100%; /* 모바일에서 가로 꽉 차게 */
             background: var(--primary); color: white; border: none; border-radius: 12px;
             padding: 10px 20px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;
         }
@@ -59,7 +58,6 @@
         .agency-name { font-size: 20px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; line-height: 1.3; }
         .agency-address { font-size: 14px; color: var(--text-sub); margin-top: 6px; display: flex; align-items: flex-start; gap: 4px; line-height: 1.4; }
         
-        /* 세부 정보 그리드 표 */
         .detail-grid {
             display: grid; grid-template-columns: 80px 1fr; gap: 8px 12px;
             background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid var(--border); margin-top: 4px;
@@ -85,8 +83,41 @@
 
         .loading-status { font-size: 13px; color: var(--text-sub); position: absolute; bottom: 20px; left: 20px; z-index: 5; background: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px; box-shadow: var(--shadow); }
 
+        /* 📍 마커 + 텍스트 라벨 (커스텀 오버레이용) */
+        .custom-label-marker {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        .marker-label {
+            position: absolute;
+            top: 42px; /* 마커 배지 바로 아래 위치 */
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-main);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .custom-label-marker:hover .marker-label {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            z-index: 20;
+        }
+
+        /* PC 화면용 레이아웃 펴주기 */
         @media (min-width: 768px) {
-            /* PC 화면에서는 다시 한 줄로 예쁘게 배치 */
             .region-selector { left: 20px; transform: none; flex-wrap: nowrap; border-radius: 30px; padding: 8px 12px; }
             .region-selector select { flex: 1; min-width: auto; }
             .divider { display: block; width: 1px; height: 20px; background: var(--border); }
@@ -97,24 +128,18 @@
             .loading-status { bottom: 20px; right: 20px; left: auto; }
         }
     </style>
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=1dedad226228d16b1ddf719fe1cbb31b&libraries=services"></script>
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=1dedad226228d16b1ddf719fe1cbb31b&libraries=services"></script>
 </head>
 <body>
 
     <div id="map"></div>
 
     <div class="region-selector">
-        <select id="sido" onchange="handleSidoChange()">
-            <option value="">시/도 선택</option>
-        </select>
+        <select id="sido" onchange="handleSidoChange()"><option value="">시/도 선택</option></select>
         <div class="divider"></div>
-        <select id="sigungu">
-            <option value="">시/구/군 전체</option>
-        </select>
+        <select id="sigungu"><option value="">시/구/군 전체</option></select>
         <div class="divider"></div>
-        <select id="category">
-            <option value="">전체 분류</option>
-        </select>
+        <select id="category"><option value="">전체 분류</option></select>
         <button class="btn-search" onclick="filterAndShowAgencies()">조회</button>
     </div>
 
@@ -125,13 +150,10 @@
         <div class="legend-item"><div class="color-dot" style="background:#64748b;"></div> 기타</div>
     </div>
 
-    <div class="info-panel" id="agencyPanel">
-        </div>
-
+    <div class="info-panel" id="agencyPanel"></div>
     <div class="loading-status" id="loadStatus">데이터 로딩 중...</div>
 
     <script>
-        // --- 1. 전역 변수 및 초기화 ---
         let map, geocoder;
         let currentMarkers = []; 
         let agencyDataset = [];  
@@ -145,20 +167,15 @@
 
             kakao.maps.event.addListener(map, 'click', closePanel);
 
+            // JSON 데이터 및 업데이트 시간 불러오기
             fetch('agency_data.json')
                 .then(response => { 
                     if (!response.ok) throw new Error('JSON 로드 실패'); 
                     return response.json(); 
                 })
                 .then(jsonResult => {
-                    // 💡 파이썬에서 만든 새로운 구조에 맞춰 데이터와 시간을 꺼냅니다.
-                    // (만약 파이썬을 아직 안 돌렸다면 기존 방식대로 돌아가도록 안전장치 포함)
                     agencyDataset = jsonResult.data || jsonResult; 
-                    
-                    const updateTime = jsonResult.update_time 
-                                        ? ` (최종 업데이트: ${jsonResult.update_time})` 
-                                        : "";
-
+                    const updateTime = jsonResult.update_time ? ` (최종 업데이트: ${jsonResult.update_time})` : "";
                     document.getElementById('loadStatus').innerText = `✅ 데이터 ${agencyDataset.length}건 준비 완료${updateTime}`;
                     
                     initSidoDropdown(); 
@@ -170,11 +187,9 @@
                 });
         });
 
-        // --- 2. 유틸리티 함수 (주소 파싱 및 스타일링) ---
-        function getAddress(item) {
-            return item.drmJuso || item.bjdsgg || "";
-        }
+        function getAddress(item) { return item.drmJuso || item.bjdsgg || ""; }
 
+        // 기관 분류에 따른 테마 색상 및 SVG 아이콘 지정
         function getMarkerStyle(category) {
             if (category && category.includes("사회복지")) {
                 return { color: "#10b981", icon: '<path fill="#ffffff" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>' };
@@ -188,6 +203,7 @@
             return { color: "#64748b", icon: '<path fill="#ffffff" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>' };
         }
 
+        // 마커 배경 핀과 아이콘을 조립하는 함수
         function createCustomMarker(style) {
             const baseShape = `M12 0C5.373 0 0 5.373 0 12c0 8.442 11.233 22.457 11.583 22.906a.526.526 0 0 0 .834 0C12.767 34.457 24 20.442 24 12c0-6.627-5.373-12-12-12z`;
             const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="46" viewBox="0 0 24 35"><path fill="${style.color}" d="${baseShape}"/><g transform="translate(4.5, 3.5) scale(0.62)">${style.icon}</g></svg>`;
@@ -195,12 +211,8 @@
         }
 
         function copyAddress(addr) {
-            navigator.clipboard.writeText(addr).then(() => {
-                alert("주소가 클립보드에 복사되었습니다.\n" + addr);
-            }).catch(err => {
-                console.error('복사 실패:', err);
-                alert("주소 복사에 실패했습니다.");
-            });
+            navigator.clipboard.writeText(addr).then(() => alert("주소가 클립보드에 복사되었습니다.\n" + addr))
+            .catch(err => { console.error('복사 실패:', err); alert("주소 복사에 실패했습니다."); });
         }
 
         function clearMarkers() {
@@ -208,33 +220,23 @@
             currentMarkers = [];
         }
 
-        function closePanel() { 
-            document.getElementById('agencyPanel').style.display = 'none'; 
-        }
+        function closePanel() { document.getElementById('agencyPanel').style.display = 'none'; }
 
-        // --- 3. UI 드롭다운 구성 ---
+        // --- 드롭다운 세팅 로직 ---
         function initSidoDropdown() {
             const sidoSelect = document.getElementById('sido');
             const sidoMap = new Map(); 
-            
             agencyDataset.forEach(item => {
                 const addr = getAddress(item);
                 const sidoName = addr.split(" ")[0];
                 const codeStr = String(item.bjdsggjusoCd || "99"); 
-                const sidoCode = codeStr.substring(0, 2); 
-                
                 if (sidoName && sidoName.length > 1 && !sidoMap.has(sidoName)) {
-                    sidoMap.set(sidoName, sidoCode);
+                    sidoMap.set(sidoName, codeStr.substring(0, 2));
                 }
             });
-
-            Array.from(sidoMap.entries())
-                .map(([name, code]) => ({ name, code }))
-                .sort((a, b) => parseInt(a.code) - parseInt(b.code))
+            Array.from(sidoMap.entries()).map(([name, code]) => ({ name, code })).sort((a, b) => parseInt(a.code) - parseInt(b.code))
                 .forEach(sido => {
-                    const option = document.createElement('option');
-                    option.value = sido.name; option.text = sido.name;
-                    sidoSelect.appendChild(option);
+                    const option = document.createElement('option'); option.value = sido.name; option.text = sido.name; sidoSelect.appendChild(option);
                 });
         }
 
@@ -245,39 +247,27 @@
             if (!selectedSido) return;
 
             const sigunguMap = new Map();
-            agencyDataset
-                .filter(item => getAddress(item).startsWith(selectedSido))
-                .forEach(item => {
+            agencyDataset.filter(item => getAddress(item).startsWith(selectedSido)).forEach(item => {
                     const addr = getAddress(item);
                     const sigunguName = addr.split(" ")[1]; 
-                    const sigunguCode = String(item.bjdsggjusoCd || "99999"); 
-                    
                     if (sigunguName && sigunguName.length > 1 && !sigunguMap.has(sigunguName)) {
-                        sigunguMap.set(sigunguName, sigunguCode);
+                        sigunguMap.set(sigunguName, String(item.bjdsggjusoCd || "99999"));
                     }
                 });
-
-            Array.from(sigunguMap.entries())
-                .map(([name, code]) => ({ name, code }))
-                .sort((a, b) => parseInt(a.code) - parseInt(b.code))
+            Array.from(sigunguMap.entries()).map(([name, code]) => ({ name, code })).sort((a, b) => parseInt(a.code) - parseInt(b.code))
                 .forEach(sigungu => {
-                    const option = document.createElement('option');
-                    option.value = sigungu.name; option.text = sigungu.name;
-                    sigunguSelect.appendChild(option);
+                    const option = document.createElement('option'); option.value = sigungu.name; option.text = sigungu.name; sigunguSelect.appendChild(option);
                 });
         }
 
         function initCategoryDropdown() {
             const categorySelect = document.getElementById('category');
-            const categories = [...new Set(agencyDataset.map(item => item.ssggdaeBr).filter(Boolean))].sort();
-            categories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat; option.text = cat;
-                categorySelect.appendChild(option);
+            [...new Set(agencyDataset.map(item => item.ssggdaeBr).filter(Boolean))].sort().forEach(cat => {
+                const option = document.createElement('option'); option.value = cat; option.text = cat; categorySelect.appendChild(option);
             });
         }
 
-        // --- 4. 지도 검색 및 패널 렌더링 ---
+        // --- 맵 렌더링 및 오버레이 로직 ---
         function filterAndShowAgencies() {
             const sido = document.getElementById('sido').value;
             const sigungu = document.getElementById('sigungu').value;
@@ -309,31 +299,40 @@
                 geocoder.addressSearch(addr, function(result, status) {
                     if (status === kakao.maps.services.Status.OK) {
                         const coords = new kakao.maps.LatLng(result[0].y, result[0].x);
-
                         const agencyType = agency.ssggdaeBr || "";
                         const markerStyle = getMarkerStyle(agencyType);
                         
-                        const markerImage = new kakao.maps.MarkerImage(
-                            createCustomMarker(markerStyle),
-                            new kakao.maps.Size(32, 46),
-                            { offset: new kakao.maps.Point(16, 46) } 
-                        );
+                        // 📍 텍스트 라벨이 포함된 커스텀 오버레이 생성 로직
+                        const content = document.createElement('div');
+                        content.className = 'custom-label-marker';
+                        
+                        const img = document.createElement('img');
+                        img.src = createCustomMarker(markerStyle);
+                        img.style.width = '32px';
+                        img.style.height = '46px';
+                        
+                        const label = document.createElement('span');
+                        label.className = 'marker-label';
+                        label.innerText = agency.bokmuGgm || "기관명 없음"; 
 
-                        const marker = new kakao.maps.Marker({
-                            map: map,
-                            position: coords,
-                            image: markerImage 
-                        });
+                        content.appendChild(img);
+                        content.appendChild(label);
 
-                        currentMarkers.push(marker);
-                        bounds.extend(coords);
-
-                        kakao.maps.event.addListener(marker, 'click', function() {
+                        content.onclick = function() {
                             showAgencyDetail(agency, markerStyle.color);
                             map.panTo(coords); 
+                        };
+
+                        const customOverlay = new kakao.maps.CustomOverlay({
+                            map: map,
+                            position: coords,
+                            content: content,
+                            yAnchor: 1 // 꼬리 끝이 좌표를 정확히 가리키도록 설정
                         });
 
-                        // 모든 마커가 처리되면 지도 범위를 결과에 맞게 조정
+                        currentMarkers.push(customOverlay);
+                        bounds.extend(coords);
+
                         if (index === results.length - 1 || currentMarkers.length === results.length) {
                             map.setBounds(bounds);
                         }
@@ -342,12 +341,11 @@
             });
         }
 
+        // --- 정보 패널 표시 로직 ---
         function showAgencyDetail(agency, color) {
             const name = agency.bokmuGgm || "기관명 정보 없음";
-            
             let rawAddr = getAddress(agency) || "주소 정보 없음";
-            let addrWords = rawAddr.split(" ");
-            let cleanAddr = addrWords.filter((word, index) => addrWords.indexOf(word) === index).join(" ");
+            let cleanAddr = rawAddr.split(" ").filter((word, index, arr) => arr.indexOf(word) === index).join(" ");
 
             const tel = agency.jeonhwaNo || "정보없음";
             const fax = agency.insttFxnum || "정보없음";
@@ -365,21 +363,12 @@
                     </div>
                     <svg onclick="closePanel()" style="cursor:pointer; flex-shrink: 0;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </div>
-                
                 <div class="detail-grid">
-                    <div class="detail-label">상세분류</div>
-                    <div class="detail-value">${subType}</div>
-                    
-                    <div class="detail-label">전화번호</div>
-                    <div class="detail-value">${tel}</div>
-                    
-                    <div class="detail-label">팩스번호</div>
-                    <div class="detail-value">${fax}</div>
-                    
-                    <div class="detail-label">제한조건</div>
-                    <div class="detail-value ${restrictions !== '제한조건 없음' ? 'warning' : ''}">${restrictions}</div>
+                    <div class="detail-label">상세분류</div><div class="detail-value">${subType}</div>
+                    <div class="detail-label">전화번호</div><div class="detail-value">${tel}</div>
+                    <div class="detail-label">팩스번호</div><div class="detail-value">${fax}</div>
+                    <div class="detail-label">제한조건</div><div class="detail-value ${restrictions !== '제한조건 없음' ? 'warning' : ''}">${restrictions}</div>
                 </div>
-
                 <div class="action-buttons">
                     <button class="btn-action" onclick="alert('${tel} 번호로 문의 전화를 연결합니다.')">📞 전화하기</button>
                     <button class="btn-action btn-primary" onclick="copyAddress('${cleanAddr}')">📋 주소복사</button>
