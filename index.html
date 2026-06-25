@@ -19,27 +19,31 @@
 
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
 
-        /* 상단 3단 지역/분류 선택 바 */
+/* 상단 3단 지역/분류 선택 바 (모바일 반응형 적용) */
         .region-selector {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             width: 95%; max-width: 680px;
-            background: var(--bg-white); border-radius: 30px; box-shadow: var(--shadow);
-            display: flex; align-items: center; padding: 8px 12px; z-index: 10; gap: 8px;
+            background: var(--bg-white); border-radius: 16px; box-shadow: var(--shadow);
+            display: flex; flex-wrap: wrap; /* 💡 핵심: 화면이 좁으면 알아서 줄바꿈 */
+            align-items: center; padding: 12px; z-index: 10; gap: 8px;
         }
 
         .region-selector select {
-            flex: 1; border: none; outline: none; font-size: 14px; padding: 8px;
+            flex: 1 1 40%; /* 모바일에서는 반반씩 공간을 차지함 */
+            min-width: 110px;
+            border: none; outline: none; font-size: 14px; padding: 8px;
             background: transparent; color: var(--text-main); font-weight: 500; cursor: pointer;
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat; background-position: right 4px center; background-size: 16px; padding-right: 20px;
         }
 
-        .divider { width: 1px; height: 20px; background: var(--border); }
+        .divider { display: none; } /* 좁은 모바일에서는 구분선을 숨김 */
 
         .btn-search {
-            background: var(--primary); color: white; border: none; border-radius: 20px;
-            padding: 8px 20px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.2s;
+            flex: 1 1 100%; /* 모바일에서 터치하기 편하게 가로를 꽉 채움 */
+            background: var(--primary); color: white; border: none; border-radius: 12px;
+            padding: 10px 20px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s;
         }
         .btn-search:hover { background: #1d4ed8; }
 
@@ -82,7 +86,12 @@
         .loading-status { font-size: 13px; color: var(--text-sub); position: absolute; bottom: 20px; left: 20px; z-index: 5; background: rgba(255,255,255,0.9); padding: 6px 10px; border-radius: 6px; box-shadow: var(--shadow); }
 
         @media (min-width: 768px) {
-            .region-selector { left: 20px; transform: none; }
+            /* PC 화면에서는 다시 한 줄로 예쁘게 배치 */
+            .region-selector { left: 20px; transform: none; flex-wrap: nowrap; border-radius: 30px; padding: 8px 12px; }
+            .region-selector select { flex: 1; min-width: auto; }
+            .divider { display: block; width: 1px; height: 20px; background: var(--border); }
+            .btn-search { flex: 0 0 auto; border-radius: 20px; padding: 8px 20px; }
+            
             .info-panel { left: 20px; bottom: 20px; transform: none; }
             .legend { bottom: 20px; left: 520px; }
             .loading-status { bottom: 20px; right: 20px; left: auto; }
