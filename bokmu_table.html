@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전국 복무기관 종합 목록</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-white: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --bg-light: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Pretendard', sans-serif; }
+        body { background-color: var(--bg-white); padding: 16px; color: var(--text-main); }
+
+        /* 상단 검색 바 */
+        .search-container {
+            background: var(--bg-light); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px; margin-bottom: 16px;
+            display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+        }
+
+        .search-container select {
+            flex: 1 1 30%; min-width: 120px; padding: 10px; border-radius: 8px;
+            border: 1px solid var(--border); font-size: 14px; outline: none;
+            color: var(--text-main); background: var(--bg-white);
+        }
+
+        .btn-search {
+            flex: 1 1 100%; background: var(--primary); color: white; border: none;
+            padding: 12px 20px; border-radius: 8px; font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-search:hover { background: #1d4ed8; }
+
+        /* 결과 안내 텍스트 */
+        .result-status { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-sub); }
+        .result-status span { color: var(--primary); }
+
+        /* 데이터 표 영역 */
+        .table-wrapper {
+            width: 100%; overflow-x: auto; /* 모바일에서 가로 스크롤 가능 */
+            border: 1px solid var(--border); border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; white-space: nowrap; }
+        th, td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background-color: var(--bg-light); font-weight: 700; color: var(--text-sub); position: sticky; top: 0; z-index: 10; }
+        tbody tr:hover { background-color: #f1f5f9; }
+        
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; color: white; }
+
+        @media (min-width: 768px) {
+            .search-container select { flex: 1; }
+            .btn-search { flex: 0 0 auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-container">
+        <select id="sido" onchange="handleSidoChange()"><option value="">시/도 선택</option></select>
+        <select id="sigungu"><option value="">시/구/군 전체</option></select>
+        <select id="category"><option value="">전체 분류</option></select>
+        <button class="btn-search" onclick="filterAndShowTable()">목록 조회</button>
+    </div>
+
+    <div class="result-status" id="loadStatus">데이터 로딩 중...</div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>기관 분류</th>
+                    <th>기관명</th>
+                    <th>전화번호</th>
+                    <th>상세 주소</th>
+                    <th>배제조건</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 30px;">지역을 선택하고 조회를 눌러주세요.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let agencyDataset = [];  
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetch('agency_data.json')
+                .then(response => response.json())
+                .then(jsonResult => {
+                    agencyDataset = jsonResult.data || jsonResult; 
+                    const updateTime = jsonResult.update_time ? ` (업데이트: ${jsonResult.update_time})` : "";
+                    document.getElementById('loadStatus').innerText = `✅ 총 ${agencyDataset.length.toLocaleString()}개 기관 데이터 로드 완료${updateTime}`;
+                    initSidoDropdown(); 
+                    initCategoryDropdown(); 
+                })
+                .catch(error => { 
+                    console.error(error); 
+                    document.getElementById('loadStatus').innerText = "❌ 데이터 로드 실패"; 
+                });
+        });
+
+        function getAddress(item) { return item.drmJuso || item.bjdsgg || ""; }
+
+        function getBadgeColor(category) {
+            if (category && category.includes("사회복지")) return "#10b981";
+            if (category && (category.includes("국가") || category.includes("지방자치"))) return "#ef4444";
+            if (category && (category.includes("공공단체") || category.includes("교육"))) return "#f59e0b";
+            return "#64748b";
+        }
+
+        // 드롭다운 세팅 함수들 (지도와 동일)
+        function initSidoDropdown() {
+            const sidoSelect = document.getElementById('sido');
+            const sidoMap = new Map(); 
+            agencyDataset.forEach(item => {
+                const addr = getAddress(item);
+                const sidoName = addr.split(" ")[0];
+                const codeStr = String(item.bjdsggjusoCd || "99"); 
+                if (sidoName && sidoName.length > 1 && !sidoMap.has(sidoName)) {
+                    sidoMap.set(sidoName, codeStr.substring(0, 2));
+                }
+            });
+            Array.from(sidoMap.entries()).map(([name, code]) => ({ name, code })).sort((a, b) => parseInt(a.code) - parseInt(b.code))
+                .forEach(sido => {
+                    const option = document.createElement('option'); option.value = sido.name; option.text = sido.name; sidoSelect.appendChild(option);
+                });
+        }
+
+        function handleSidoChange() {
+            const selectedSido = document.getElementById('sido').value;
+            const sigunguSelect = document.getElementById('sigungu');
+            sigunguSelect.innerHTML = '<option value="">시/구/군 전체</option>';
+            if (!selectedSido) return;
+
+            const sigunguMap = new Map();
+            agencyDataset.filter(item => getAddress(item).startsWith(selectedSido)).forEach(item => {
+                const addr = getAddress(item);
+                const sigunguName = addr.split(" ")[1]; 
+                if (sigunguName && sigunguName.length > 1 && !sigunguMap.has(sigunguName)) {
+                    sigunguMap.set(sigunguName, String(item.bjdsggjusoCd || "99999"));
+                }
+            });
+            Array.from(sigunguMap.entries()).map(([name, code]) => ({ name, code })).sort((a, b) => parseInt(a.code) - parseInt(b.code))
+                .forEach(sigungu => {
+                    const option = document.createElement('option'); option.value = sigungu.name; option.text = sigungu.name; sigunguSelect.appendChild(option);
+                });
+        }
+
+        function initCategoryDropdown() {
+            const categorySelect = document.getElementById('category');
+            [...new Set(agencyDataset.map(item => item.ssggdaeBr).filter(Boolean))].sort().forEach(cat => {
+                const option = document.createElement('option'); option.value = cat; option.text = cat; categorySelect.appendChild(option);
+            });
+        }
+
+        // 💡 표 데이터 생성 로직
+        function filterAndShowTable() {
+            const sido = document.getElementById('sido').value;
+            const sigungu = document.getElementById('sigungu').value;
+            const category = document.getElementById('category').value; 
+            const tbody = document.getElementById('tableBody');
+
+            if (!sido) { alert("시/도를 먼저 선택해주세요."); return; }
+
+            const results = agencyDataset.filter(item => {
+                const addr = getAddress(item);
+                const matchSido = addr.startsWith(sido);
+                const matchSigungu = !sigungu || addr.includes(" " + sigungu); 
+                const matchCategory = !category || item.ssggdaeBr === category; 
+                return matchSido && matchSigungu && matchCategory;
+            });
+
+            document.getElementById('loadStatus').innerHTML = `검색 결과: <span>${results.length}</span>건`;
+
+            if (results.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #ef4444; padding: 30px;">조건에 맞는 기관이 없습니다.</td></tr>`;
+                return;
+            }
+
+            // 결과를 HTML 표 행(tr)으로 변환
+            let tableHTML = "";
+            results.forEach(agency => {
+                const name = agency.bokmuGgm || "정보 없음";
+                const addrWords = (getAddress(agency) || "").split(" ");
+                const cleanAddr = addrWords.filter((word, index) => addrWords.indexOf(word) === index).join(" ");
+                const tel = agency.jeonhwaNo || "-";
+                const type = agency.ssggdaeBr || "분류없음";
+                const restrictions = agency.sbjhjilbyeong || "-";
+                const badgeColor = getBadgeColor(type);
+
+                tableHTML += `
+                    <tr>
+                        <td><span class="badge" style="background-color: ${badgeColor}">${type}</span></td>
+                        <td style="font-weight: 600;">${name}</td>
+                        <td>${tel}</td>
+                        <td>${cleanAddr}</td>
+                        <td style="color: ${restrictions !== '-' ? '#ef4444' : 'inherit'}; font-size: 13px;">${restrictions}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = tableHTML;
+        }
+    </script>
+</body>
+</html>
